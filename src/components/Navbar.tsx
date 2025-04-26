@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Search, User, Home } from 'lucide-react';
+import { Search, User, Home, Info, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -26,6 +26,20 @@ const Navbar = () => {
             <Link to="/search">
               <Search className={isMobile ? "h-5 w-5" : "h-4 w-4 mr-2"} />
               {!isMobile && "Rechercher"}
+            </Link>
+          </Button>
+
+          <Button variant="ghost" asChild size={isMobile ? "icon" : "default"} className="text-white hover:bg-primary-foreground/10">
+            <Link to="/about">
+              <Info className={isMobile ? "h-5 w-5" : "h-4 w-4 mr-2"} />
+              {!isMobile && "À propos"}
+            </Link>
+          </Button>
+
+          <Button variant="ghost" asChild size={isMobile ? "icon" : "default"} className="text-white hover:bg-primary-foreground/10">
+            <Link to="/contact">
+              <Mail className={isMobile ? "h-5 w-5" : "h-4 w-4 mr-2"} />
+              {!isMobile && "Contact"}
             </Link>
           </Button>
           
