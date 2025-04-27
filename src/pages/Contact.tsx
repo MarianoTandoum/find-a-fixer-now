@@ -7,22 +7,43 @@ import Footer from "@/components/Footer";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message envoyé",
-      description: "Nous vous répondrons dans les plus brefs délais.",
-    });
-    setFormData({ name: "", email: "", message: "" });
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: formData
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message envoyé",
+        description: "Nous vous répondrons dans les plus brefs délais.",
+      });
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -55,6 +76,7 @@ const Contact = () => {
                     onChange={handleChange}
                     placeholder="Votre nom"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -70,6 +92,7 @@ const Contact = () => {
                     onChange={handleChange}
                     placeholder="votre@email.com"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -85,11 +108,12 @@ const Contact = () => {
                     placeholder="Votre message..."
                     required
                     className="min-h-[150px]"
+                    disabled={isSubmitting}
                   />
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Envoyer
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Envoi en cours..." : "Envoyer"}
                 </Button>
               </form>
             </div>
