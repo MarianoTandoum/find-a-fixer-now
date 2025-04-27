@@ -5,7 +5,7 @@ import TechnicianCard from "@/components/TechnicianCard";
 import { technicianService, Technician } from "@/services/technicianService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Loader2 } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -21,30 +21,41 @@ const Search = () => {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechnicians, setFilteredTechnicians] = useState<Technician[]>([]);
   const [professions, setProfessions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const allTechnicians = technicianService.getAllTechnicians();
-    setTechnicians(allTechnicians);
-    setFilteredTechnicians(allTechnicians);
-    
-    const availableProfessions = technicianService.getProfessions();
-    setProfessions(availableProfessions);
+    const loadData = async () => {
+      setLoading(true);
+      const allTechnicians = await technicianService.getAllTechnicians();
+      const availableProfessions = await technicianService.getProfessions();
+      
+      setTechnicians(allTechnicians);
+      setFilteredTechnicians(allTechnicians);
+      setProfessions(availableProfessions);
+      setLoading(false);
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
-    let results = technicians;
-    
-    if (searchTerm.trim()) {
-      results = technicianService.searchTechnicians(searchTerm);
-    }
-    
-    if (professionFilter && professionFilter !== "all") {
-      results = results.filter(tech => 
-        tech.profession.toLowerCase() === professionFilter.toLowerCase()
-      );
-    }
-    
-    setFilteredTechnicians(results);
+    const filterTechnicians = async () => {
+      let results = technicians;
+      
+      if (searchTerm.trim()) {
+        results = await technicianService.searchTechnicians(searchTerm);
+      }
+      
+      if (professionFilter && professionFilter !== "all") {
+        results = results.filter(tech => 
+          tech.profession.toLowerCase() === professionFilter.toLowerCase()
+        );
+      }
+      
+      setFilteredTechnicians(results);
+    };
+
+    filterTechnicians();
   }, [searchTerm, professionFilter, technicians]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -55,6 +66,17 @@ const Search = () => {
     setSearchTerm("");
     setProfessionFilter("all");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
