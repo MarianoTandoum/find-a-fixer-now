@@ -26,6 +26,21 @@ const getAllTechnicians = async (): Promise<Technician[]> => {
   return data || [];
 };
 
+const getTechnicianById = async (id: string): Promise<Technician | null> => {
+  const { data, error } = await supabase
+    .from('technicians')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching technician with ID ${id}:`, error);
+    return null;
+  }
+
+  return data;
+};
+
 const searchTechnicians = async (query: string): Promise<Technician[]> => {
   const { data, error } = await supabase
     .from('technicians')
@@ -56,6 +71,21 @@ const getProfessions = async (): Promise<string[]> => {
   return Array.from(professions).sort();
 };
 
+const addTechnician = async (technicianData: Omit<Technician, 'id' | 'is_validated' | 'created_at'>): Promise<Technician | null> => {
+  const { data, error } = await supabase
+    .from('technicians')
+    .insert([{ ...technicianData, is_validated: false }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding technician:', error);
+    return null;
+  }
+
+  return data;
+};
+
 const validateTechnician = async (id: string): Promise<boolean> => {
   const { error } = await supabase
     .from('technicians')
@@ -79,5 +109,7 @@ export const technicianService = {
   searchTechnicians,
   getProfessions,
   validateTechnician,
-  deleteTechnician
+  deleteTechnician,
+  getTechnicianById,
+  addTechnician
 };

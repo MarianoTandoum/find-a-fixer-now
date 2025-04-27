@@ -19,7 +19,7 @@ const TechnicianCard = ({ technician, showDetails = false }: TechnicianCardProps
           <div className="flex-1">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               {technician.name}
-              <TechnicianBadge isValidated={technician.isValidated} />
+              <TechnicianBadge isValidated={technician.is_validated} />
             </CardTitle>
           </div>
         </div>

@@ -29,15 +29,19 @@ const TechnicianProfile = () => {
     }
     
     // Récupérer les informations du technicien
-    const technicianData = technicianService.getTechnicianById(id);
+    const fetchTechnician = async () => {
+      const technicianData = await technicianService.getTechnicianById(id);
+      
+      if (technicianData) {
+        setTechnician(technicianData);
+      } else {
+        setError("Technicien non trouvé");
+      }
+      
+      setLoading(false);
+    };
     
-    if (technicianData) {
-      setTechnician(technicianData);
-    } else {
-      setError("Technicien non trouvé");
-    }
-    
-    setLoading(false);
+    fetchTechnician();
   }, [id]);
   
   if (loading) {

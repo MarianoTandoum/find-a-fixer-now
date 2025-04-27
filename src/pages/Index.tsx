@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -12,13 +13,17 @@ const Index = () => {
 
   useEffect(() => {
     // Récupérer quelques techniciens à mettre en avant sur la page d'accueil
-    const allTechnicians = technicianService.getAllTechnicians();
-    // Prendre un échantillon aléatoire de 3 techniciens
-    const randomTechnicians = [...allTechnicians]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 3);
-    
-    setFeaturedTechnicians(randomTechnicians);
+    const fetchTechnicians = async () => {
+      const allTechnicians = await technicianService.getAllTechnicians();
+      // Prendre un échantillon aléatoire de 3 techniciens
+      const randomTechnicians = [...allTechnicians]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      
+      setFeaturedTechnicians(randomTechnicians);
+    };
+
+    fetchTechnicians();
   }, []);
 
   return (

@@ -45,7 +45,7 @@ const Register = () => {
       setIsSubmitting(true);
       
       // Enregistrer le nouveau technicien
-      const newTechnician = technicianService.addTechnician({
+      const newTechnician = await technicianService.addTechnician({
         name: formData.name,
         profession: formData.profession,
         phone: formData.phone,
@@ -58,7 +58,11 @@ const Register = () => {
       });
       
       // Rediriger vers la page du profil du technicien
-      navigate(`/technician/${newTechnician.id}`);
+      if (newTechnician) {
+        navigate(`/technician/${newTechnician.id}`);
+      } else {
+        throw new Error("Erreur lors de la création du technicien");
+      }
       
     } catch (error) {
       console.error("Erreur lors de l'inscription:", error);
