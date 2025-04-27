@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import TechnicianCard from "@/components/TechnicianCard";
@@ -13,6 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import Footer from "@/components/Footer";
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,26 +22,21 @@ const Search = () => {
   const [professions, setProfessions] = useState<string[]>([]);
 
   useEffect(() => {
-    // Charger tous les techniciens
     const allTechnicians = technicianService.getAllTechnicians();
     setTechnicians(allTechnicians);
     setFilteredTechnicians(allTechnicians);
     
-    // Charger les professions pour le filtre
     const availableProfessions = technicianService.getProfessions();
     setProfessions(availableProfessions);
   }, []);
 
   useEffect(() => {
-    // Filtrer les techniciens selon les critères de recherche
     let results = technicians;
     
-    // Filtre par terme de recherche
     if (searchTerm.trim()) {
       results = technicianService.searchTechnicians(searchTerm);
     }
     
-    // Filtre par profession
     if (professionFilter) {
       results = results.filter(tech => 
         tech.profession.toLowerCase() === professionFilter.toLowerCase()
@@ -53,7 +48,6 @@ const Search = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // La recherche se fait automatiquement via l'useEffect
   };
 
   const handleReset = () => {
@@ -65,10 +59,9 @@ const Search = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 flex-grow">
         <h1 className="text-3xl font-bold mb-8 text-center">Rechercher un technicien</h1>
         
-        {/* Formulaire de recherche */}
         <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -120,8 +113,7 @@ const Search = () => {
           </div>
         </form>
         
-        {/* Résultats de recherche */}
-        <div>
+        <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">
             {filteredTechnicians.length} technicien(s) trouvé(s)
           </h2>
@@ -149,14 +141,7 @@ const Search = () => {
         </div>
       </div>
       
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 mt-auto">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <p>&copy; {new Date().getFullYear()} Find-A-Fixer. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
