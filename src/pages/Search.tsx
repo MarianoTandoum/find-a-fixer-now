@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import TechnicianCard from "@/components/TechnicianCard";
@@ -16,7 +17,7 @@ import Footer from "@/components/Footer";
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [professionFilter, setProfessionFilter] = useState("");
+  const [professionFilter, setProfessionFilter] = useState("all");
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechnicians, setFilteredTechnicians] = useState<Technician[]>([]);
   const [professions, setProfessions] = useState<string[]>([]);
@@ -37,7 +38,7 @@ const Search = () => {
       results = technicianService.searchTechnicians(searchTerm);
     }
     
-    if (professionFilter) {
+    if (professionFilter && professionFilter !== "all") {
       results = results.filter(tech => 
         tech.profession.toLowerCase() === professionFilter.toLowerCase()
       );
@@ -52,7 +53,7 @@ const Search = () => {
 
   const handleReset = () => {
     setSearchTerm("");
-    setProfessionFilter("");
+    setProfessionFilter("all");
   };
 
   return (
@@ -91,7 +92,7 @@ const Search = () => {
                     <SelectValue placeholder="Toutes les professions" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les professions</SelectItem>
+                    <SelectItem value="all">Toutes les professions</SelectItem>
                     {professions.map(profession => (
                       <SelectItem key={profession} value={profession}>
                         {profession}
