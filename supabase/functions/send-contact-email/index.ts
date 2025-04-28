@@ -23,10 +23,19 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, message }: ContactEmailRequest = await req.json();
 
-    // Envoyer un e-mail à l'administrateur
+    // Save message to database first
+    const { error: dbError } = await supabaseClient.from('contact_messages').insert({
+      name,
+      email,
+      message
+    });
+
+    if (dbError) throw dbError;
+
+    // Send email to administrator
     const adminEmailResponse = await resend.emails.send({
-      from: "FindAFixer <onboarding@resend.dev>",
-      to: ["contact@find-a-fixer.com"], // Remplacez par votre adresse e-mail
+      from: "FixHub <onboarding@resend.dev>",
+      to: ["contact@fixhub.com"], // Replace with your email
       reply_to: email,
       subject: `Nouveau message de ${name}`,
       html: `
@@ -38,16 +47,16 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    // Envoyer une confirmation à l'utilisateur
+    // Send confirmation to user
     await resend.emails.send({
-      from: "FindAFixer <onboarding@resend.dev>",
+      from: "FixHub <onboarding@resend.dev>",
       to: [email],
       subject: "Nous avons bien reçu votre message",
       html: `
         <h2>Merci de nous avoir contacté !</h2>
         <p>Cher(e) ${name},</p>
         <p>Nous avons bien reçu votre message et nous vous répondrons dans les plus brefs délais.</p>
-        <p>Cordialement,<br>L'équipe FindAFixer</p>
+        <p>Cordialement,<br>L'équipe FixHub</p>
       `,
     });
 

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,8 +121,8 @@ const Contact = () => {
               <h2 className="text-xl font-semibold mb-4">Nos coordonnées</h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-technicien-600" />
-                  <span>contact@find-a-fixer.com</span>
+                  <Mail className="h-5 w-5 text-primary" />
+                  <span>contact@fixhub.com</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-technicien-600" />
