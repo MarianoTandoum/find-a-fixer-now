@@ -15,8 +15,10 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
-// Détection de l'environnement pour le basename
-const basename = import.meta.env.MODE === 'production' ? '/find-a-fixer-now' : '';
+// Determine if we're on GitHub Pages
+const isGitHubPages = window.location.hostname.includes('github.io');
+// Only use the basename for GitHub Pages
+const basename = isGitHubPages ? '/find-a-fixer-now' : '';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
