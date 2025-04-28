@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,12 +15,15 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
+// Détection de l'environnement pour le basename
+const basename = import.meta.env.MODE === 'production' ? '/find-a-fixer-now' : '';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/search" element={<Search />} />
