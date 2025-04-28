@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email to administrator
     const adminEmailResponse = await resend.emails.send({
       from: "FixHub <onboarding@resend.dev>",
-      to: ["contact@fixhub.com"], // Replace with your email
+      to: ["marianotandoum@gmail.com"], // Updated email address
       reply_to: email,
       subject: `Nouveau message de ${name}`,
       html: `

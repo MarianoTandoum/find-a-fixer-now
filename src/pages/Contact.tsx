@@ -122,7 +122,7 @@ const Contact = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-primary" />
-                  <span>contact@fixhub.com</span>
+                  <span>marianotandoum@gmail.com</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-5 w-5 text-technicien-600" />
