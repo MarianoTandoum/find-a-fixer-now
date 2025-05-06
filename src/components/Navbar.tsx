@@ -4,14 +4,14 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWindowWidth } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const isMobile = useWindowWidth() < 768;
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const checkAuth = async () => {
