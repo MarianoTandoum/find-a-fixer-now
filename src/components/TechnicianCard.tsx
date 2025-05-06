@@ -1,10 +1,12 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, User } from "lucide-react";
+import { Phone, MapPin, User, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Technician } from "@/services/technicianService";
 import TechnicianBadge from "./TechnicianBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TechnicianCardProps {
   technician: Technician;
@@ -12,6 +14,45 @@ interface TechnicianCardProps {
 }
 
 const TechnicianCard = ({ technician, showDetails = false }: TechnicianCardProps) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const getPhoneDisplay = () => {
+    if (isAuthenticated) {
+      return (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Phone className="h-4 w-4" />
+          <span>{technician.phone}</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="h-4 w-4" />
+          <Link to="/auth" className="text-technicien-600 hover:underline">
+            Connectez-vous pour voir le numéro
+          </Link>
+        </div>
+      );
+    }
+  };
+
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-2">
@@ -31,10 +72,7 @@ const TechnicianCard = ({ technician, showDetails = false }: TechnicianCardProps
         </div>
         
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <span>{technician.phone}</span>
-          </div>
+          {getPhoneDisplay()}
           
           {technician.location && (
             <div className="flex items-center gap-2 text-muted-foreground">

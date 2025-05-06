@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { technicianService } from "@/services/technicianService";
@@ -11,38 +11,73 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { User, Phone, MapPin, Briefcase } from "lucide-react";
 import Footer from "@/components/Footer";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Schéma de validation
+const registerSchema = z.object({
+  name: z.string().min(2, "Veuillez saisir un nom valide"),
+  profession: z.string().min(2, "Veuillez saisir une profession valide"),
+  phone: z.string()
+    .min(9, "Le numéro doit contenir au moins 9 chiffres")
+    .max(13, "Le numéro ne doit pas dépasser 13 caractères")
+    .regex(/^(?:\+?237|237)?[6-9][0-9]{8}$/, "Format invalide. Exemple: 6XXXXXXXX ou +2376XXXXXXXX"),
+  location: z.string().optional(),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    profession: "",
-    phone: "",
-    location: "",
-  });
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      profession: "",
+      phone: "",
+      location: "",
+    },
+  });
+
+  // Vérifier si l'utilisateur est connecté
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentification requise",
+          description: "Veuillez vous connecter pour vous inscrire comme technicien.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+      }
+    };
     
-    // Validation basique
-    if (!formData.name || !formData.profession || !formData.phone) {
-      toast({
-        title: "Informations manquantes",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive"
-      });
-      return;
+    checkAuth();
+  }, [navigate, toast]);
+  
+  const formatPhoneNumber = (phone: string): string => {
+    // Supprimer tous les caractères non numériques
+    let cleaned = phone.replace(/\D/g, '');
+    
+    // Si le numéro ne commence pas par 237, l'ajouter
+    if (cleaned.length === 9 && !cleaned.startsWith('237')) {
+      cleaned = '237' + cleaned;
+    } else if (cleaned.length > 9 && cleaned.length < 12) {
+      // Si le numéro a plus de 9 chiffres mais moins de 12, normaliser à 12
+      cleaned = '237' + cleaned.slice(-9);
     }
     
+    return cleaned;
+  };
+  
+  const handleSubmit = async (values: RegisterFormValues) => {
     try {
       setIsSubmitting(true);
       
@@ -50,7 +85,6 @@ const Register = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // Si l'utilisateur n'est pas connecté, on le redirige vers la page d'authentification
         toast({
           title: "Authentification requise",
           description: "Veuillez vous connecter pour vous inscrire comme technicien.",
@@ -60,12 +94,15 @@ const Register = () => {
         return;
       }
       
+      // Formater le numéro de téléphone
+      const formattedPhone = formatPhoneNumber(values.phone);
+      
       // Enregistrer le nouveau technicien avec l'ID de l'utilisateur
       const newTechnician = await technicianService.addTechnician({
-        name: formData.name,
-        profession: formData.profession,
-        phone: formData.phone,
-        location: formData.location,
+        name: values.name,
+        profession: values.profession,
+        phone: formattedPhone,
+        location: values.location || "",
         user_id: session.user.id
       });
       
@@ -105,81 +142,107 @@ const Register = () => {
           </p>
           
           <div className="bg-white p-8 rounded-lg shadow-md">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-technicien-600" />
-                  Nom complet ou nom de l'entreprise *
-                </Label>
-                <Input
-                  id="name"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
                   name="name"
-                  placeholder="Ex: Jean Dupont"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-technicien-600" />
+                        Nom complet ou nom de l'entreprise *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Jean Dupont"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="profession" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-technicien-600" />
-                  Profession / Spécialité *
-                </Label>
-                <Input
-                  id="profession"
+                
+                <FormField
+                  control={form.control}
                   name="profession"
-                  placeholder="Ex: Plombier, Électricien..."
-                  value={formData.profession}
-                  onChange={handleChange}
-                  required
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-technicien-600" />
+                        Profession / Spécialité *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Plombier, Électricien..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-technicien-600" />
-                  Numéro de téléphone *
-                </Label>
-                <Input
-                  id="phone"
+                
+                <FormField
+                  control={form.control}
                   name="phone"
-                  placeholder="Ex: 695123456"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-technicien-600" />
+                        Numéro de téléphone *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: 695123456"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">
+                        Format: 6XXXXXXXX ou +2376XXXXXXXX
+                      </p>
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-technicien-600" />
-                  Localisation (Ville, Quartier)
-                </Label>
-                <Textarea
-                  id="location"
+                
+                <FormField
+                  control={form.control}
                   name="location"
-                  placeholder="Ex: Douala, Bonamoussadi"
-                  value={formData.location}
-                  onChange={handleChange}
-                  rows={2}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-technicien-600" />
+                        Localisation (Ville, Quartier)
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Ex: Douala, Bonamoussadi"
+                          {...field}
+                          rows={2}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="w-full bg-technicien-600 hover:bg-technicien-700"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Inscription en cours..." : "S'inscrire maintenant"}
-                </Button>
-              </div>
-              
-              <p className="text-sm text-muted-foreground text-center">
-                En vous inscrivant, vous acceptez que vos coordonnées soient visibles par les visiteurs du site.
-              </p>
-            </form>
+                
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    className="w-full bg-technicien-600 hover:bg-technicien-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Inscription en cours..." : "S'inscrire maintenant"}
+                  </Button>
+                </div>
+                
+                <p className="text-sm text-muted-foreground text-center">
+                  En vous inscrivant, vous acceptez que vos coordonnées soient visibles par les visiteurs du site.
+                </p>
+              </form>
+            </Form>
           </div>
         </div>
       </div>
