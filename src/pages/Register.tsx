@@ -3,12 +3,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { technicianService } from "@/services/technicianService";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { User, Phone, MapPin, Briefcase } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const Register = () => {
   const { toast } = useToast();
@@ -44,12 +46,27 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       
-      // Enregistrer le nouveau technicien
+      // Vérifier si l'utilisateur est connecté
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Si l'utilisateur n'est pas connecté, on le redirige vers la page d'authentification
+        toast({
+          title: "Authentification requise",
+          description: "Veuillez vous connecter pour vous inscrire comme technicien.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return;
+      }
+      
+      // Enregistrer le nouveau technicien avec l'ID de l'utilisateur
       const newTechnician = await technicianService.addTechnician({
         name: formData.name,
         profession: formData.profession,
         phone: formData.phone,
         location: formData.location,
+        user_id: session.user.id
       });
       
       toast({
@@ -65,7 +82,7 @@ const Register = () => {
       }
       
     } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
+      console.error("Error adding technician:", error);
       toast({
         title: "Erreur lors de l'inscription",
         description: "Une erreur s'est produite. Veuillez réessayer.",
@@ -167,14 +184,7 @@ const Register = () => {
         </div>
       </div>
       
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 mt-auto">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <p>&copy; {new Date().getFullYear()} Find-A-Fixer. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

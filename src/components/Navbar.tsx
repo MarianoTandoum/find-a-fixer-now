@@ -54,7 +54,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="font-bold text-xl text-technicien-600">
-            FixHub
+            Mon Technicien du Coin
           </Link>
 
           {/* Navigation desktop */}
