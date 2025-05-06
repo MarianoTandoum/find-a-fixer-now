@@ -24,7 +24,8 @@ const getAllTechnicians = async (): Promise<Technician[]> => {
     return [];
   }
 
-  return data || [];
+  // Type assertion to ensure data conforms to Technician[]
+  return (data as Technician[]) || [];
 };
 
 const getTechnicianById = async (id: string): Promise<Technician | null> => {
@@ -39,7 +40,8 @@ const getTechnicianById = async (id: string): Promise<Technician | null> => {
     return null;
   }
 
-  return data;
+  // Type assertion to ensure data conforms to Technician
+  return data as Technician;
 };
 
 const searchTechnicians = async (query: string): Promise<Technician[]> => {
@@ -54,7 +56,8 @@ const searchTechnicians = async (query: string): Promise<Technician[]> => {
     return [];
   }
 
-  return data || [];
+  // Type assertion to ensure data conforms to Technician[]
+  return (data as Technician[]) || [];
 };
 
 const getProfessions = async (): Promise<string[]> => {
@@ -84,7 +87,8 @@ const addTechnician = async (technicianData: Omit<Technician, 'id' | 'is_validat
     return null;
   }
 
-  return data;
+  // Type assertion to ensure data conforms to Technician
+  return data as Technician;
 };
 
 const validateTechnician = async (id: string): Promise<boolean> => {
