@@ -1,8 +1,14 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// Initialisation du client Supabase dans la fonction Edge
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,18 +30,21 @@ const handler = async (req: Request): Promise<Response> => {
     const { name, email, message }: ContactEmailRequest = await req.json();
 
     // Save message to database first
-    const { error: dbError } = await supabaseClient.from('contact_messages').insert({
+    const { error: dbError } = await supabase.from('contact_messages').insert({
       name,
       email,
       message
     });
 
-    if (dbError) throw dbError;
+    if (dbError) {
+      console.error("Database error:", dbError);
+      throw new Error(`Erreur lors de l'enregistrement du message: ${dbError.message}`);
+    }
 
     // Send email to administrator
     const adminEmailResponse = await resend.emails.send({
       from: "FixHub <onboarding@resend.dev>",
-      to: ["marianotandoum@gmail.com"], // Updated email address
+      to: ["marianotandoum@gmail.com"], 
       reply_to: email,
       subject: `Nouveau message de ${name}`,
       html: `
