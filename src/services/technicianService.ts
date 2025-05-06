@@ -8,6 +8,7 @@ export interface Technician {
   phone: string;
   location?: string;
   profile_picture?: string;
+  user_id: string;  // Added user_id as required property
   is_validated: boolean;
   created_at: string;
 }
