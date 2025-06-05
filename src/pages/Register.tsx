@@ -8,15 +8,13 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { User, Phone, MapPin, Briefcase } from "lucide-react";
+import { User, Phone, MapPin, Briefcase, FileText } from "lucide-react";
 import Footer from "@/components/Footer";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Schéma de validation
 const registerSchema = z.object({
   name: z.string().min(2, "Veuillez saisir un nom valide"),
   profession: z.string().min(2, "Veuillez saisir une profession valide"),
@@ -25,6 +23,7 @@ const registerSchema = z.object({
     .max(13, "Le numéro ne doit pas dépasser 13 caractères")
     .regex(/^(?:\+?237|237)?[6-9][0-9]{8}$/, "Format invalide. Exemple: 6XXXXXXXX ou +2376XXXXXXXX"),
   location: z.string().optional(),
+  bio: z.string().optional(),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -41,10 +40,10 @@ const Register = () => {
       profession: "",
       phone: "",
       location: "",
+      bio: "",
     },
   });
 
-  // Vérifier si l'utilisateur est connecté
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -63,14 +62,11 @@ const Register = () => {
   }, [navigate, toast]);
   
   const formatPhoneNumber = (phone: string): string => {
-    // Supprimer tous les caractères non numériques
     let cleaned = phone.replace(/\D/g, '');
     
-    // Si le numéro ne commence pas par 237, l'ajouter
     if (cleaned.length === 9 && !cleaned.startsWith('237')) {
       cleaned = '237' + cleaned;
     } else if (cleaned.length > 9 && cleaned.length < 12) {
-      // Si le numéro a plus de 9 chiffres mais moins de 12, normaliser à 12
       cleaned = '237' + cleaned.slice(-9);
     }
     
@@ -81,7 +77,6 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       
-      // Vérifier si l'utilisateur est connecté
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -94,15 +89,14 @@ const Register = () => {
         return;
       }
       
-      // Formater le numéro de téléphone
       const formattedPhone = formatPhoneNumber(values.phone);
       
-      // Enregistrer le nouveau technicien avec l'ID de l'utilisateur
       const newTechnician = await technicianService.addTechnician({
         name: values.name,
         profession: values.profession,
         phone: formattedPhone,
         location: values.location || "",
+        bio: values.bio || "",
         user_id: session.user.id
       });
       
@@ -111,7 +105,6 @@ const Register = () => {
         description: "Votre profil a été créé avec succès.",
       });
       
-      // Rediriger vers la page du profil du technicien
       if (newTechnician) {
         navigate(`/technician/${newTechnician.id}`);
       } else {
@@ -138,10 +131,18 @@ const Register = () => {
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-6 text-center">Inscription comme technicien</h1>
           <p className="text-muted-foreground mb-8 text-center">
-            Rejoignez notre réseau de professionnels et développez votre clientèle.
+            Rejoignez notre réseau de professionnels et développez votre clientèle en toute sécurité.
           </p>
           
           <div className="bg-white p-8 rounded-lg shadow-md">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-blue-900 mb-2">Confidentialité garantie</h4>
+              <p className="text-sm text-blue-800">
+                Vos coordonnées personnelles restent privées. Seuls votre nom, profession et localisation seront visibles. 
+                Les clients vous contacteront via notre messagerie sécurisée.
+              </p>
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 <FormField
@@ -191,7 +192,7 @@ const Register = () => {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-technicien-600" />
-                        Numéro de téléphone *
+                        Numéro de téléphone * (privé)
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -201,7 +202,7 @@ const Register = () => {
                       </FormControl>
                       <FormMessage />
                       <p className="text-xs text-muted-foreground">
-                        Format: 6XXXXXXXX ou +2376XXXXXXXX
+                        Format: 6XXXXXXXX ou +2376XXXXXXXX - Visible uniquement par vous
                       </p>
                     </FormItem>
                   )}
@@ -217,10 +218,30 @@ const Register = () => {
                         Localisation (Ville, Quartier)
                       </FormLabel>
                       <FormControl>
-                        <Textarea
+                        <Input
                           placeholder="Ex: Douala, Bonamoussadi"
                           {...field}
-                          rows={2}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-technicien-600" />
+                        Description de vos services (optionnel)
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Décrivez brièvement votre expérience, vos spécialités..."
+                          {...field}
+                          rows={4}
                         />
                       </FormControl>
                       <FormMessage />
@@ -239,7 +260,7 @@ const Register = () => {
                 </div>
                 
                 <p className="text-sm text-muted-foreground text-center">
-                  En vous inscrivant, vous acceptez que vos coordonnées soient visibles par les visiteurs du site.
+                  En vous inscrivant, vous acceptez notre politique de confidentialité et vous engagez à respecter la vie privée des clients.
                 </p>
               </form>
             </Form>

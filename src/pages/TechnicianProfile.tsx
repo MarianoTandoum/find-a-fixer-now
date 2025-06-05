@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Phone, MapPin, ArrowLeft, Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { MapPin, ArrowLeft, MessageCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const TechnicianProfile = () => {
@@ -22,24 +21,6 @@ const TechnicianProfile = () => {
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-    
-    checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
   
   useEffect(() => {
     if (!id) {
@@ -48,7 +29,6 @@ const TechnicianProfile = () => {
       return;
     }
     
-    // Récupérer les informations du technicien
     const fetchTechnician = async () => {
       const technicianData = await technicianService.getTechnicianById(id);
       
@@ -97,32 +77,6 @@ const TechnicianProfile = () => {
     );
   }
   
-  const PhoneSection = () => {
-    if (isAuthenticated) {
-      return (
-        <div className="flex items-start gap-3">
-          <Phone className="h-5 w-5 text-technicien-600 mt-0.5" />
-          <div>
-            <p className="font-medium">Téléphone</p>
-            <p className="text-lg">{technician.phone}</p>
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-start gap-3">
-          <Lock className="h-5 w-5 text-technicien-600 mt-0.5" />
-          <div>
-            <p className="font-medium">Téléphone</p>
-            <Button asChild variant="link" className="p-0 h-auto font-normal text-lg text-technicien-600">
-              <Link to="/auth">Connectez-vous pour voir le numéro</Link>
-            </Button>
-          </div>
-        </div>
-      );
-    }
-  };
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -150,18 +104,11 @@ const TechnicianProfile = () => {
                   </CardDescription>
                 </div>
                 
-                <Button className="bg-green-600 hover:bg-green-700" size="lg" asChild>
-                  {isAuthenticated ? (
-                    <a href={`tel:${technician.phone}`}>
-                      <Phone className="mr-2 h-4 w-4" />
-                      Appeler maintenant
-                    </a>
-                  ) : (
-                    <Link to="/auth">
-                      <Lock className="mr-2 h-4 w-4" />
-                      Se connecter pour appeler
-                    </Link>
-                  )}
+                <Button className="bg-technicien-600 hover:bg-technicien-700" size="lg" asChild>
+                  <Link to={`/contact/${technician.id}`}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Contacter ce technicien
+                  </Link>
                 </Button>
               </div>
             </CardHeader>
@@ -171,11 +118,9 @@ const TechnicianProfile = () => {
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Coordonnées</h3>
+                  <h3 className="text-xl font-semibold mb-4">Informations</h3>
                   
                   <div className="space-y-4">
-                    <PhoneSection />
-                    
                     {technician.location && (
                       <div className="flex items-start gap-3">
                         <MapPin className="h-5 w-5 text-technicien-600 mt-0.5" />
@@ -191,19 +136,19 @@ const TechnicianProfile = () => {
                 <div>
                   <h3 className="text-xl font-semibold mb-4">À propos</h3>
                   <p className="text-muted-foreground">
-                    {technician.name} est un professionnel spécialisé en {technician.profession.toLowerCase()}.
-                    {isAuthenticated ? 
-                      " Contactez-le directement par téléphone pour discuter de vos besoins spécifiques et obtenir un devis personnalisé." :
-                      " Connectez-vous pour voir les coordonnées complètes de ce technicien."
-                    }
+                    {technician.bio || `${technician.name} est un professionnel spécialisé en ${technician.profession.toLowerCase()}. Contactez-le via notre messagerie sécurisée pour discuter de vos besoins spécifiques et obtenir un devis personnalisé.`}
                   </p>
                 </div>
               </div>
               
               <div className="mt-8 pt-6 border-t">
-                <p className="text-sm text-muted-foreground">
-                  Ce profil a été publié sur MonTechnicienDuCoin, le réseau des professionnels de confiance.
-                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">Communication sécurisée</h4>
+                  <p className="text-sm text-blue-800">
+                    Pour votre sécurité et votre confidentialité, toutes les communications se font via notre messagerie interne sécurisée. 
+                    Aucune information de contact personnelle n'est partagée publiquement.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

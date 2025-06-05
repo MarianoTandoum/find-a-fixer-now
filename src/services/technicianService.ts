@@ -8,7 +8,8 @@ export interface Technician {
   phone: string;
   location?: string;
   profile_picture?: string;
-  user_id: string;  // Added user_id as required property
+  bio?: string;
+  user_id: string;
   is_validated: boolean;
   created_at: string;
 }
@@ -24,7 +25,6 @@ const getAllTechnicians = async (): Promise<Technician[]> => {
     return [];
   }
 
-  // Type assertion to ensure data conforms to Technician[]
   return (data as Technician[]) || [];
 };
 
@@ -40,7 +40,6 @@ const getTechnicianById = async (id: string): Promise<Technician | null> => {
     return null;
   }
 
-  // Type assertion to ensure data conforms to Technician
   return data as Technician;
 };
 
@@ -56,7 +55,6 @@ const searchTechnicians = async (query: string): Promise<Technician[]> => {
     return [];
   }
 
-  // Type assertion to ensure data conforms to Technician[]
   return (data as Technician[]) || [];
 };
 
@@ -87,7 +85,6 @@ const addTechnician = async (technicianData: Omit<Technician, 'id' | 'is_validat
     return null;
   }
 
-  // Type assertion to ensure data conforms to Technician
   return data as Technician;
 };
 

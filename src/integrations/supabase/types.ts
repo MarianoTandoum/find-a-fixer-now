@@ -27,6 +27,57 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          client_id: string
+          conversation_id: string
+          created_at: string
+          description: string | null
+          id: string
+          proposed_date: string
+          status: string
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          conversation_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          proposed_date: string
+          status?: string
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          conversation_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          proposed_date?: string
+          status?: string
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -54,8 +105,82 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          status: string
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message_type: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technicians: {
         Row: {
+          bio: string | null
           created_at: string
           id: string
           is_validated: boolean
@@ -68,6 +193,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           id?: string
           is_validated?: boolean
@@ -80,6 +206,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bio?: string | null
           created_at?: string
           id?: string
           is_validated?: boolean
