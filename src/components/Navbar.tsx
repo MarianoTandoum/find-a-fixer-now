@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { MessageCircle, User } from "lucide-react";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import OnlineIndicator from "./OnlineIndicator";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     // Vérifier la session actuelle
@@ -60,6 +63,9 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                <div className="flex items-center space-x-2">
+                  <OnlineIndicator isOnline={isOnline} showText={true} />
+                </div>
                 <Link to="/profile">
                   <Button variant="ghost" size="sm" className="flex items-center space-x-1">
                     <User className="w-4 h-4" />

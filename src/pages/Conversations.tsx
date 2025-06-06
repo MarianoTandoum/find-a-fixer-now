@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,15 +6,17 @@ import { technicianService, Technician } from "@/services/technicianService";
 import { getUserProfile, UserProfile } from "@/services/userProfileService";
 import { callService } from "@/services/callService";
 import { notificationService } from "@/services/notificationService";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MessageBubble from "@/components/MessageBubble";
-import CallModal from "@/components/CallModal";
+import CallInterface from "@/components/CallInterface";
+import OnlineIndicator from "@/components/OnlineIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Phone, ArrowLeft, Circle, MessageCircle } from "lucide-react";
+import { Send, ArrowLeft, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -29,13 +30,19 @@ const Conversations = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [callModal, setCallModal] = useState<{ isOpen: boolean; call: any; contactName: string }>({
-    isOpen: false,
-    call: null,
-    contactName: ""
+  const [callState, setCallState] = useState<{
+    isInCall: boolean;
+    contactName: string;
+    contactId: string;
+  }>({
+    isInCall: false,
+    contactName: "",
+    contactId: ""
   });
+  
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -171,7 +178,7 @@ const Conversations = () => {
     }
   };
 
-  const handleStartCall = async () => {
+  const handleStartCall = async (type: 'audio' | 'video') => {
     if (!selectedConversation) return;
 
     try {
@@ -184,14 +191,18 @@ const Conversations = () => {
 
       if (call) {
         const contactName = getContactName(selectedConversation);
-        setCallModal({ isOpen: true, call, contactName });
-        
-        const otherUserId = selectedConversation.client_id === currentUser.id 
+        const contactId = selectedConversation.client_id === currentUser.id 
           ? selectedConversation.technician_id 
           : selectedConversation.client_id;
         
+        setCallState({
+          isInCall: true,
+          contactName,
+          contactId
+        });
+        
         await notificationService.createNotification(
-          otherUserId,
+          contactId,
           'call',
           'Appel entrant',
           `${currentUser.user_metadata?.first_name || 'Un utilisateur'} vous appelle`,
@@ -208,6 +219,14 @@ const Conversations = () => {
     }
   };
 
+  const handleEndCall = () => {
+    setCallState({
+      isInCall: false,
+      contactName: "",
+      contactId: ""
+    });
+  };
+
   const getContactName = (conversation: Conversation) => {
     const isUserClient = conversation.client_id === currentUser?.id;
     if (isUserClient) {
@@ -219,27 +238,10 @@ const Conversations = () => {
     }
   };
 
-  const getContactStatus = (conversation: Conversation) => {
+  const getContactProfile = (conversation: Conversation) => {
     const isUserClient = conversation.client_id === currentUser?.id;
     const targetUserId = isUserClient ? conversation.technician_id : conversation.client_id;
-    const profile = userProfiles[targetUserId];
-    
-    if (!profile) return 'hors ligne';
-    
-    if (profile.is_online) return 'en ligne';
-    
-    if (profile.last_seen) {
-      const lastSeen = new Date(profile.last_seen);
-      const now = new Date();
-      const diffMinutes = Math.floor((now.getTime() - lastSeen.getTime()) / (1000 * 60));
-      
-      if (diffMinutes < 5) return 'actif il y a quelques minutes';
-      if (diffMinutes < 60) return `actif il y a ${diffMinutes} min`;
-      if (diffMinutes < 1440) return `actif il y a ${Math.floor(diffMinutes / 60)}h`;
-      return format(lastSeen, "dd/MM 'à' HH:mm", { locale: fr });
-    }
-    
-    return 'hors ligne';
+    return userProfiles[targetUserId];
   };
 
   if (loading) {
@@ -256,6 +258,18 @@ const Conversations = () => {
     );
   }
 
+  if (callState.isInCall) {
+    return (
+      <CallInterface
+        contactName={callState.contactName}
+        contactId={callState.contactId}
+        onStartCall={handleStartCall}
+        isInCall={true}
+        onEndCall={handleEndCall}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -264,7 +278,10 @@ const Conversations = () => {
         {/* Liste des conversations - Style Messenger */}
         <div className={`w-full md:w-80 bg-white border-r border-gray-200 ${selectedConversation ? 'hidden md:block' : ''}`}>
           <div className="p-4 border-b border-gray-200 bg-white">
-            <h2 className="text-xl font-bold text-gray-900">Messages</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+              <MessageCircle className="w-5 h-5 mr-2 text-blue-600" />
+              Messages
+            </h2>
           </div>
           
           <div className="overflow-y-auto h-full">
@@ -283,8 +300,7 @@ const Conversations = () => {
             ) : (
               conversations.map((conversation) => {
                 const contactName = getContactName(conversation);
-                const contactStatus = getContactStatus(conversation);
-                const isOnline = contactStatus === 'en ligne';
+                const contactProfile = getContactProfile(conversation);
                 
                 return (
                   <div
@@ -301,15 +317,20 @@ const Conversations = () => {
                             {contactName.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                          isOnline ? 'bg-green-400' : 'bg-gray-400'
-                        }`} />
+                        <div className="absolute -bottom-1 -right-1">
+                          <OnlineIndicator 
+                            isOnline={contactProfile?.is_online || false} 
+                            lastSeen={contactProfile?.last_seen} 
+                          />
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate">{contactName}</h3>
-                        <p className={`text-sm truncate ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                          {contactStatus}
-                        </p>
+                        <OnlineIndicator 
+                          isOnline={contactProfile?.is_online || false} 
+                          lastSeen={contactProfile?.last_seen}
+                          showText={true}
+                        />
                       </div>
                     </div>
                   </div>
@@ -340,31 +361,29 @@ const Conversations = () => {
                         {getContactName(selectedConversation).charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${
-                      getContactStatus(selectedConversation) === 'en ligne' 
-                        ? 'bg-green-400' 
-                        : 'bg-gray-400'
-                    }`} />
+                    <div className="absolute -bottom-1 -right-1">
+                      <OnlineIndicator 
+                        isOnline={getContactProfile(selectedConversation)?.is_online || false}
+                      />
+                    </div>
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{getContactName(selectedConversation)}</h3>
-                    <p className={`text-sm ${
-                      getContactStatus(selectedConversation) === 'en ligne' ? 'text-green-600' : 'text-gray-500'
-                    }`}>
-                      {getContactStatus(selectedConversation)}
-                    </p>
+                    <OnlineIndicator 
+                      isOnline={getContactProfile(selectedConversation)?.is_online || false}
+                      lastSeen={getContactProfile(selectedConversation)?.last_seen}
+                      showText={true}
+                    />
                   </div>
                 </div>
                 
-                <Button
-                  onClick={handleStartCall}
-                  variant="outline"
-                  size="sm"
-                  className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:border-blue-700"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Appeler
-                </Button>
+                <CallInterface
+                  contactName={getContactName(selectedConversation)}
+                  contactId={selectedConversation.client_id === currentUser.id 
+                    ? selectedConversation.technician_id 
+                    : selectedConversation.client_id}
+                  onStartCall={handleStartCall}
+                />
               </div>
 
               {/* Messages */}
@@ -443,20 +462,6 @@ const Conversations = () => {
       </div>
 
       <Footer />
-
-      {/* Modal d'appel */}
-      <CallModal
-        isOpen={callModal.isOpen}
-        onClose={() => setCallModal({ isOpen: false, call: null, contactName: "" })}
-        call={callModal.call}
-        contactName={callModal.contactName}
-        onAccept={() => {
-          // Logique pour accepter l'appel
-        }}
-        onDecline={() => {
-          setCallModal({ isOpen: false, call: null, contactName: "" });
-        }}
-      />
     </div>
   );
 };
