@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 import { useWebRTC } from '@/hooks/useWebRTC';
 import { Call } from '@/services/callService';
 
@@ -76,52 +76,78 @@ const CallModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 to-slate-800 text-white border-slate-700">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            {isIncoming ? 'Appel entrant' : 'Appel en cours'}
+          <DialogTitle className="text-center text-xl text-white">
+            {isIncoming ? '📞 Appel entrant' : '📞 Appel en cours'}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-col items-center space-y-6 py-6">
-          <Avatar className="w-24 h-24">
-            <AvatarFallback className="text-2xl bg-technicien-100 text-technicien-700">
-              {contactName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex flex-col items-center space-y-8 py-8">
+          {/* Avatar avec animation */}
+          <div className="relative">
+            <Avatar className="w-32 h-32 border-4 border-white/20">
+              <AvatarFallback className="text-4xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold">
+                {contactName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {state.isCallActive && (
+              <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse" />
+            )}
+          </div>
           
-          <div className="text-center">
-            <h3 className="text-xl font-semibold">{contactName}</h3>
-            <p className="text-gray-600 mt-1">{callStatus}</p>
-            {state.isConnected && (
-              <p className="text-sm text-gray-500 mt-1">{formatDuration(callDuration)}</p>
+          {/* Informations de l'appel */}
+          <div className="text-center space-y-2">
+            <h3 className="text-2xl font-bold text-white">{contactName}</h3>
+            <p className="text-lg text-gray-300">{callStatus}</p>
+            {state.isConnected && callDuration > 0 && (
+              <p className="text-2xl font-mono text-green-400 font-bold">
+                {formatDuration(callDuration)}
+              </p>
             )}
           </div>
 
+          {/* Indicateurs d'état */}
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            {state.isMuted && (
+              <div className="flex items-center space-x-1">
+                <MicOff className="w-4 h-4 text-red-400" />
+                <span>Micro coupé</span>
+              </div>
+            )}
+            {state.isConnected && (
+              <div className="flex items-center space-x-1">
+                <Volume2 className="w-4 h-4 text-green-400" />
+                <span>Audio connecté</span>
+              </div>
+            )}
+          </div>
+
+          {/* Boutons d'action */}
           {isIncoming && !state.isCallActive ? (
-            <div className="flex space-x-4">
+            <div className="flex space-x-6">
               <Button
                 onClick={handleDecline}
                 variant="destructive"
                 size="lg"
-                className="rounded-full w-16 h-16"
+                className="rounded-full w-16 h-16 bg-red-600 hover:bg-red-700 border-2 border-red-500"
               >
-                <PhoneOff className="w-6 h-6" />
+                <PhoneOff className="w-8 h-8" />
               </Button>
               <Button
                 onClick={handleAccept}
-                className="rounded-full w-16 h-16 bg-green-600 hover:bg-green-700"
+                className="rounded-full w-16 h-16 bg-green-600 hover:bg-green-700 border-2 border-green-500"
               >
-                <Phone className="w-6 h-6" />
+                <Phone className="w-8 h-8" />
               </Button>
             </div>
           ) : (
             <div className="flex space-x-4">
               <Button
                 onClick={toggleMute}
-                variant={state.isMuted ? "destructive" : "outline"}
+                variant={state.isMuted ? "destructive" : "secondary"}
                 size="lg"
-                className="rounded-full w-16 h-16"
+                className="rounded-full w-14 h-14"
               >
                 {state.isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               </Button>
@@ -129,9 +155,9 @@ const CallModal = ({
                 onClick={handleEndCall}
                 variant="destructive"
                 size="lg"
-                className="rounded-full w-16 h-16"
+                className="rounded-full w-16 h-16 bg-red-600 hover:bg-red-700"
               >
-                <PhoneOff className="w-6 h-6" />
+                <PhoneOff className="w-8 h-8" />
               </Button>
             </div>
           )}

@@ -1,108 +1,171 @@
 
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
-import TechnicianCard from "@/components/TechnicianCard";
-import { technicianService } from "@/services/technicianService";
-import { useState, useEffect } from "react";
-import { Technician } from "@/services/technicianService";
 import Footer from "@/components/Footer";
+import { Search, Shield, MessageCircle, Phone, Clock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const [featuredTechnicians, setFeaturedTechnicians] = useState<Technician[]>([]);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const fetchTechnicians = async () => {
-      const allTechnicians = await technicianService.getAllTechnicians();
-      const randomTechnicians = [...allTechnicians]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
-      
-      setFeaturedTechnicians(randomTechnicians);
-    };
+    // Vérifier la session actuelle
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
 
-    fetchTechnicians();
+    // Écouter les changements d'auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
       <Navbar />
       
-      <section className="bg-gradient-to-r from-technicien-700 to-technicien-600 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-6">Trouvez un technicien de confiance - votre confidentialité d'abord</h1>
-            <p className="text-xl mb-8">
-              Un réseau de professionnels qualifiés avec une communication 100% sécurisée via notre messagerie interne.
+      {/* Hero Section */}
+      <div className="flex-1">
+        <section className="container mx-auto px-4 py-16 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+              Trouvez le <span className="text-blue-600">technicien</span> parfait
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              FixHub vous met en relation avec des techniciens qualifiés de votre région. 
+              Communication sécurisée, appels intégrés, zéro donnée personnelle partagée.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild size="lg" className="bg-white text-technicien-700 hover:bg-gray-100">
-                <Link to="/search">Trouver un technicien</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
-                <Link to="/register">Je suis technicien</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Nos techniciens à votre service</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredTechnicians.map(technician => (
-              <TechnicianCard key={technician.id} technician={technician} />
-            ))}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="bg-technicien-600 hover:bg-technicien-700">
-              <Link to="/search">Voir tous les techniciens</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-      
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Comment ça marche</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-technicien-100 text-technicien-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
-              <h3 className="text-xl font-semibold mb-2">Recherchez</h3>
-              <p className="text-muted-foreground">Trouvez le type de technicien dont vous avez besoin en utilisant notre moteur de recherche.</p>
-            </div>
             
-            <div className="text-center">
-              <div className="bg-technicien-100 text-technicien-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
-              <h3 className="text-xl font-semibold mb-2">Contactez en sécurité</h3>
-              <p className="text-muted-foreground">Utilisez notre messagerie interne sécurisée pour contacter directement le technicien.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-technicien-100 text-technicien-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
-              <h3 className="text-xl font-semibold mb-2">Profitez</h3>
-              <p className="text-muted-foreground">Échangez en toute confidentialité et bénéficiez des services d'un professionnel qualifié.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link to="/search">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg">
+                  <Search className="w-5 h-5 mr-2" />
+                  Chercher un technicien
+                </Button>
+              </Link>
+              
+              {user ? (
+                <Link to="/conversations">
+                  <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-blue-600 text-blue-600 hover:bg-blue-50">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Mes conversations
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-blue-600 text-blue-600 hover:bg-blue-50">
+                    Inscription gratuite
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
-        </div>
-      </section>
-      
-      <section className="py-16 bg-technicien-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Vous êtes un technicien ?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Rejoignez notre réseau de professionnels et développez votre clientèle en gardant vos coordonnées privées.
-          </p>
-          <Button asChild size="lg" className="bg-white text-technicien-700 hover:bg-gray-100">
-            <Link to="/register">S'inscrire maintenant</Link>
-          </Button>
-        </div>
-      </section>
-      
+        </section>
+
+        {/* Features Section */}
+        <section className="container mx-auto px-4 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Pourquoi choisir FixHub ?
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Une plateforme conçue pour protéger votre vie privée tout en facilitant vos échanges avec les professionnels.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="text-center hover:shadow-lg transition-shadow border-none bg-white/70 backdrop-blur-sm">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Shield className="w-6 h-6 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">100% Confidentiel</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Vos données personnelles ne sont jamais partagées. Communication anonyme et sécurisée.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow border-none bg-white/70 backdrop-blur-sm">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <MessageCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <CardTitle className="text-lg">Messagerie Intégrée</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Interface comme Messenger : messages en temps réel, statut en ligne, notifications par email.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow border-none bg-white/70 backdrop-blur-sm">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                  <Phone className="w-6 h-6 text-purple-600" />
+                </div>
+                <CardTitle className="text-lg">Appels Audio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Appels directs dans le navigateur sans révéler votre numéro. WebRTC sécurisé.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow border-none bg-white/70 backdrop-blur-sm">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                  <Clock className="w-6 h-6 text-orange-600" />
+                </div>
+                <CardTitle className="text-lg">Disponible 24/7</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Contactez vos techniciens à tout moment. Système de notifications pour ne rien manquer.
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="container mx-auto px-4 py-16">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-lg border border-white/20">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Prêt à commencer ?
+            </h2>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              Rejoignez dès maintenant la plateforme qui révolutionne la mise en relation avec les techniciens.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {!user && (
+                <Link to="/auth">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 px-8 py-3">
+                    Créer un compte gratuit
+                  </Button>
+                </Link>
+              )}
+              <Link to="/search">
+                <Button variant="outline" size="lg" className="px-8 py-3 border-blue-600 text-blue-600 hover:bg-blue-50">
+                  Explorer les techniciens
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <Footer />
     </div>
   );

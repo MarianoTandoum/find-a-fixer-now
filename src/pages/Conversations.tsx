@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Phone, ArrowLeft, Circle } from "lucide-react";
+import { Send, Phone, ArrowLeft, Circle, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -77,7 +77,6 @@ const Conversations = () => {
         schema: 'public',
         table: 'user_profiles'
       }, () => {
-        // Recharger les profils utilisateurs pour le statut en ligne
         loadUserProfiles();
       })
       .subscribe();
@@ -91,7 +90,6 @@ const Conversations = () => {
     const convs = await conversationService.getUserConversations();
     setConversations(convs);
     
-    // Charger les techniciens et profils utilisateurs
     const techIds = new Set<string>();
     const userIds = new Set<string>();
     
@@ -101,7 +99,6 @@ const Conversations = () => {
       userIds.add(conv.technician_id);
     });
 
-    // Charger les techniciens
     const techData: Record<string, Technician> = {};
     for (const id of techIds) {
       const tech = await technicianService.getTechnicianById(id);
@@ -109,9 +106,7 @@ const Conversations = () => {
     }
     setTechnicians(techData);
 
-    // Charger les profils utilisateurs
     await loadUserProfiles(Array.from(userIds));
-    
     setLoading(false);
   };
 
@@ -134,8 +129,6 @@ const Conversations = () => {
   const loadMessages = async (conversation: Conversation) => {
     const msgs = await conversationService.getConversationMessages(conversation.id);
     setMessages(msgs);
-    
-    // Marquer les messages comme lus
     await conversationService.markMessagesAsRead(conversation.id);
   };
 
@@ -154,7 +147,6 @@ const Conversations = () => {
         setMessages(prev => [...prev, message]);
         setNewMessage("");
         
-        // Créer une notification pour l'autre utilisateur
         const otherUserId = selectedConversation.client_id === currentUser.id 
           ? selectedConversation.technician_id 
           : selectedConversation.client_id;
@@ -194,7 +186,6 @@ const Conversations = () => {
         const contactName = getContactName(selectedConversation);
         setCallModal({ isOpen: true, call, contactName });
         
-        // Notification pour l'autre utilisateur
         const otherUserId = selectedConversation.client_id === currentUser.id 
           ? selectedConversation.technician_id 
           : selectedConversation.client_id;
@@ -253,34 +244,38 @@ const Conversations = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <p>Chargement des conversations...</p>
+          <div className="text-center">
+            <MessageCircle className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+            <p className="text-gray-500">Chargement des conversations...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
       
-      <div className="flex-1 flex">
-        {/* Liste des conversations */}
-        <div className={`w-full md:w-80 bg-white border-r ${selectedConversation ? 'hidden md:block' : ''}`}>
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Messages</h2>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Liste des conversations - Style Messenger */}
+        <div className={`w-full md:w-80 bg-white border-r border-gray-200 ${selectedConversation ? 'hidden md:block' : ''}`}>
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <h2 className="text-xl font-bold text-gray-900">Messages</h2>
           </div>
           
-          <div className="overflow-y-auto">
+          <div className="overflow-y-auto h-full">
             {conversations.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                <p>Aucune conversation</p>
+              <div className="p-6 text-center">
+                <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune conversation</h3>
+                <p className="text-gray-500 mb-4">Commencez par chercher un technicien</p>
                 <Button
                   onClick={() => navigate("/search")}
-                  className="mt-2"
-                  variant="outline"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   Trouver un technicien
                 </Button>
@@ -295,26 +290,26 @@ const Conversations = () => {
                   <div
                     key={conversation.id}
                     onClick={() => handleConversationSelect(conversation)}
-                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedConversation?.id === conversation.id ? 'bg-blue-50' : ''
+                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                      selectedConversation?.id === conversation.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <Avatar>
-                          <AvatarFallback className="bg-technicien-100 text-technicien-700">
+                      <div className="relative flex-shrink-0">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold">
                             {contactName.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <Circle
-                          className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                            isOnline ? 'fill-green-500 text-green-500' : 'fill-gray-400 text-gray-400'
-                          }`}
-                        />
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
+                          isOnline ? 'bg-green-400' : 'bg-gray-400'
+                        }`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{contactName}</h3>
-                        <p className="text-sm text-gray-500 truncate">{contactStatus}</p>
+                        <h3 className="font-semibold text-gray-900 truncate">{contactName}</h3>
+                        <p className={`text-sm truncate ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                          {contactStatus}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -324,12 +319,12 @@ const Conversations = () => {
           </div>
         </div>
 
-        {/* Zone de conversation */}
-        <div className="flex-1 flex flex-col">
+        {/* Zone de conversation - Style Messenger */}
+        <div className="flex-1 flex flex-col bg-white">
           {selectedConversation ? (
             <>
               {/* En-tête de conversation */}
-              <div className="p-4 border-b bg-white flex items-center justify-between">
+              <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm">
                 <div className="flex items-center space-x-3">
                   <Button
                     variant="ghost"
@@ -337,25 +332,27 @@ const Conversations = () => {
                     onClick={() => setSelectedConversation(null)}
                     className="md:hidden"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <ArrowLeft className="w-5 h-5" />
                   </Button>
                   <div className="relative">
-                    <Avatar>
-                      <AvatarFallback className="bg-technicien-100 text-technicien-700">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold">
                         {getContactName(selectedConversation).charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <Circle
-                      className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                        getContactStatus(selectedConversation) === 'en ligne' 
-                          ? 'fill-green-500 text-green-500' 
-                          : 'fill-gray-400 text-gray-400'
-                      }`}
-                    />
+                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${
+                      getContactStatus(selectedConversation) === 'en ligne' 
+                        ? 'bg-green-400' 
+                        : 'bg-gray-400'
+                    }`} />
                   </div>
                   <div>
-                    <h3 className="font-medium">{getContactName(selectedConversation)}</h3>
-                    <p className="text-sm text-gray-500">{getContactStatus(selectedConversation)}</p>
+                    <h3 className="font-semibold text-gray-900">{getContactName(selectedConversation)}</h3>
+                    <p className={`text-sm ${
+                      getContactStatus(selectedConversation) === 'en ligne' ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                      {getContactStatus(selectedConversation)}
+                    </p>
                   </div>
                 </div>
                 
@@ -363,7 +360,7 @@ const Conversations = () => {
                   onClick={handleStartCall}
                   variant="outline"
                   size="sm"
-                  className="text-technicien-600 border-technicien-600 hover:bg-technicien-50"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50 hover:border-blue-700"
                 >
                   <Phone className="w-4 h-4 mr-2" />
                   Appeler
@@ -371,50 +368,74 @@ const Conversations = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isOwnMessage={message.sender_id === currentUser?.id}
-                    senderName={
-                      message.sender_id === currentUser?.id 
-                        ? undefined 
-                        : getContactName(selectedConversation)
-                    }
-                  />
-                ))}
+              <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-blue-50/30 to-white">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">Aucun message pour le moment</p>
+                      <p className="text-sm text-gray-400">Envoyez le premier message !</p>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      isOwnMessage={message.sender_id === currentUser?.id}
+                      senderName={
+                        message.sender_id === currentUser?.id 
+                          ? undefined 
+                          : getContactName(selectedConversation)
+                      }
+                    />
+                  ))
+                )}
               </div>
 
               {/* Zone de saisie */}
-              <div className="p-4 bg-white border-t">
-                <div className="flex space-x-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Tapez votre message..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                  />
+              <div className="p-4 bg-white border-t border-gray-200">
+                <div className="flex space-x-3 items-end">
+                  <div className="flex-1">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Tapez votre message..."
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                      className="min-h-[44px] resize-none border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-full px-4"
+                      disabled={sending}
+                    />
+                  </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sending}
-                    className="bg-technicien-600 hover:bg-technicien-700"
+                    className="bg-blue-600 hover:bg-blue-700 rounded-full h-11 w-11 p-0"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Sélectionnez une conversation
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-blue-50/30 to-white">
+              <div className="text-center max-w-md mx-auto px-6">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Vos messages FixHub
                 </h3>
-                <p className="text-gray-500">
-                  Choisissez une conversation pour commencer à échanger
+                <p className="text-gray-500 mb-6">
+                  Sélectionnez une conversation pour commencer à échanger avec vos techniciens ou clients
                 </p>
+                {conversations.length === 0 && (
+                  <Button
+                    onClick={() => navigate("/search")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Trouver un technicien
+                  </Button>
+                )}
               </div>
             </div>
           )}

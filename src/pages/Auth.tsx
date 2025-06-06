@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +68,7 @@ const Auth = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/profile");
+        navigate("/conversations");
       }
     };
     
@@ -82,7 +83,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: 'https://dvjwjrbqmzlwuycrdzou.supabase.co/auth/v1/callback'
+          redirectTo: `${window.location.origin}/conversations`
         }
       });
 
@@ -121,7 +122,7 @@ const Auth = () => {
         description: "Vous êtes maintenant connecté.",
       });
 
-      navigate("/profile");
+      navigate("/conversations");
     } catch (error: any) {
       setError(
         error.message || "Une erreur est survenue lors de la connexion. Veuillez réessayer."
@@ -145,7 +146,7 @@ const Auth = () => {
         email: values.email,
         password: values.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: `${window.location.origin}/conversations`,
           data: {
             first_name: values.firstName,
             last_name: values.lastName,
@@ -155,12 +156,26 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Envoyer l'email de bienvenue
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email: values.email,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            confirmationUrl: `${window.location.origin}/auth`
+          }
+        });
+      } catch (emailError) {
+        console.error('Erreur envoi email:', emailError);
+      }
+
       toast({
         title: "Inscription réussie !",
-        description: "Un email de confirmation a été envoyé à votre adresse. Veuillez vérifier votre boîte de réception et suivre les instructions pour activer votre compte.",
+        description: "Un email de confirmation a été envoyé à votre adresse. Veuillez vérifier votre boîte de réception.",
       });
 
-      // Rediriger vers la page de connexion après l'inscription
+      // Basculer vers la connexion
       navigate("/auth", { state: { tab: "login" } });
     } catch (error: any) {
       setError(
@@ -177,18 +192,21 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-12 flex-grow">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-bold mb-6 text-center">Mon compte</h1>
+      <div className="container mx-auto px-4 py-12 flex-grow flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">FixHub</h1>
+            <p className="text-gray-600">Votre plateforme de techniciens de confiance</p>
+          </div>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             <Tabs defaultValue={defaultTab} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="login">Connexion</TabsTrigger>
-                <TabsTrigger value="register">Inscription</TabsTrigger>
+              <TabsList className="grid grid-cols-2 w-full bg-gray-50">
+                <TabsTrigger value="login" className="data-[state=active]:bg-white">Connexion</TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-white">Inscription</TabsTrigger>
               </TabsList>
 
               <div className="p-6">
@@ -198,28 +216,26 @@ const Auth = () => {
                   </Alert>
                 )}
 
-                <TabsContent value="login">
-                  {/* Bouton de connexion Facebook */}
-                  <div className="space-y-3 mb-6">
-                    <Button
-                      onClick={handleFacebookLogin}
-                      disabled={loading}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                      </svg>
-                      Continuer avec Facebook
-                    </Button>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-2 text-muted-foreground">Ou</span>
-                      </div>
+                <TabsContent value="login" className="space-y-4">
+                  {/* Bouton Facebook */}
+                  <Button
+                    onClick={handleFacebookLogin}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full bg-[#1877F2] text-white border-[#1877F2] hover:bg-[#166FE5] hover:border-[#166FE5]"
+                  >
+                    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    Continuer avec Facebook
+                  </Button>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-gray-500">Ou</span>
                     </div>
                   </div>
 
@@ -235,6 +251,7 @@ const Auth = () => {
                               <Input 
                                 type="email" 
                                 placeholder="votre@email.com" 
+                                className="h-12"
                                 {...field} 
                               />
                             </FormControl>
@@ -252,7 +269,8 @@ const Auth = () => {
                             <FormControl>
                               <Input 
                                 type="password" 
-                                placeholder="••••••••" 
+                                placeholder="••••••••"
+                                className="h-12"
                                 {...field} 
                               />
                             </FormControl>
@@ -261,10 +279,11 @@ const Auth = () => {
                         )}
                       />
 
-                      <Button type="submit" className="w-full" disabled={loading}>
+                      <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={loading}>
                         {loading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connexion en cours...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Connexion...
                           </>
                         ) : (
                           "Se connecter"
@@ -274,28 +293,26 @@ const Auth = () => {
                   </Form>
                 </TabsContent>
 
-                <TabsContent value="register">
-                  {/* Bouton d'inscription Facebook */}
-                  <div className="space-y-3 mb-6">
-                    <Button
-                      onClick={handleFacebookLogin}
-                      disabled={loading}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                      </svg>
-                      S'inscrire avec Facebook
-                    </Button>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-2 text-muted-foreground">Ou</span>
-                      </div>
+                <TabsContent value="register" className="space-y-4">
+                  {/* Bouton Facebook */}
+                  <Button
+                    onClick={handleFacebookLogin}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full bg-[#1877F2] text-white border-[#1877F2] hover:bg-[#166FE5] hover:border-[#166FE5]"
+                  >
+                    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    S'inscrire avec Facebook
+                  </Button>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-gray-500">Ou</span>
                     </div>
                   </div>
 
@@ -310,7 +327,8 @@ const Auth = () => {
                               <FormLabel>Prénom</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="Prénom" 
+                                  placeholder="Prénom"
+                                  className="h-12"
                                   {...field} 
                                 />
                               </FormControl>
@@ -327,7 +345,8 @@ const Auth = () => {
                               <FormLabel>Nom</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="Nom" 
+                                  placeholder="Nom"
+                                  className="h-12"
                                   {...field} 
                                 />
                               </FormControl>
@@ -346,7 +365,8 @@ const Auth = () => {
                             <FormControl>
                               <Input 
                                 type="email" 
-                                placeholder="votre@email.com" 
+                                placeholder="votre@email.com"
+                                className="h-12"
                                 {...field} 
                               />
                             </FormControl>
@@ -364,7 +384,8 @@ const Auth = () => {
                             <FormControl>
                               <Input 
                                 type="password" 
-                                placeholder="••••••••" 
+                                placeholder="••••••••"
+                                className="h-12"
                                 {...field} 
                               />
                             </FormControl>
@@ -382,7 +403,8 @@ const Auth = () => {
                             <FormControl>
                               <Input 
                                 type="password" 
-                                placeholder="••••••••" 
+                                placeholder="••••••••"
+                                className="h-12"
                                 {...field} 
                               />
                             </FormControl>
@@ -391,10 +413,11 @@ const Auth = () => {
                         )}
                       />
 
-                      <Button type="submit" className="w-full" disabled={loading}>
+                      <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700" disabled={loading}>
                         {loading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Inscription en cours...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Inscription...
                           </>
                         ) : (
                           "S'inscrire"
