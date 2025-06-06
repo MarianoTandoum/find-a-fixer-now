@@ -9,6 +9,8 @@ export interface UserProfile {
   phone: string | null;
   address: string | null;
   city: string | null;
+  is_online: boolean | null;
+  last_seen: string | null;
   created_at: string;
   updated_at: string;
 }
