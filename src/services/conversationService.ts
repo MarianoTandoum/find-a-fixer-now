@@ -74,9 +74,13 @@ const getOrCreateConversation = async (technicianId: string): Promise<Conversati
 };
 
 const getUserConversations = async (): Promise<Conversation[]> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return [];
+
   const { data, error } = await supabase
     .from('conversations')
     .select('*')
+    .or(`client_id.eq.${session.user.id},technician_id.eq.${session.user.id}`)
     .order('updated_at', { ascending: false });
 
   if (error) {

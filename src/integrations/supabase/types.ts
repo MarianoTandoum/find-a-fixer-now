@@ -78,6 +78,50 @@ export type Database = {
           },
         ]
       }
+      calls: {
+        Row: {
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          callee_id?: string
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -178,6 +222,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       technicians: {
         Row: {
           bio: string | null
@@ -227,7 +304,10 @@ export type Database = {
           created_at: string
           first_name: string | null
           id: string
+          is_online: boolean | null
           last_name: string | null
+          last_seen: string | null
+          notification_preferences: Json | null
           phone: string | null
           updated_at: string
         }
@@ -237,7 +317,10 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id: string
+          is_online?: boolean | null
           last_name?: string | null
+          last_seen?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
           updated_at?: string
         }
@@ -247,7 +330,10 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          is_online?: boolean | null
           last_name?: string | null
+          last_seen?: string | null
+          notification_preferences?: Json | null
           phone?: string | null
           updated_at?: string
         }
