@@ -2,229 +2,234 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentUser, getUserProfile, updateUserProfile, UserProfile } from "@/services/userProfileService";
+import { getUserProfile, updateUserProfile, UserProfile } from "@/services/userProfileService";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { User, Home, MapPin, Phone } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { User, Phone, MapPin, Mail } from "lucide-react";
 
 const Profile = () => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    phone: "",
+  });
+  
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Charger le profil de l'utilisateur
   useEffect(() => {
-    const loadUserProfile = async () => {
-      setLoading(true);
-      const user = await getCurrentUser();
-
-      if (!user) {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate("/auth");
         return;
       }
-
-      const profile = await getUserProfile(user.id);
-      if (profile) {
-        setUserProfile(profile);
-      } else {
-        setError("Impossible de charger votre profil. Veuillez réessayer plus tard.");
+      
+      setCurrentUser(session.user);
+      const userProfile = await getUserProfile(session.user.id);
+      
+      if (userProfile) {
+        setProfile(userProfile);
+        setFormData({
+          first_name: userProfile.first_name || "",
+          last_name: userProfile.last_name || "",
+          phone: userProfile.phone || "",
+        });
       }
+      
       setLoading(false);
     };
 
-    loadUserProfile();
+    checkAuth();
   }, [navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (userProfile) {
-      setUserProfile({
-        ...userProfile,
-        [name]: value,
-      });
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userProfile) return;
+  const handleSave = async () => {
+    if (!currentUser || !profile) return;
 
-    setSaving(true);
-    setError(null);
-
+    setUpdating(true);
     try {
-      const updatedProfile = await updateUserProfile(userProfile.id, userProfile);
+      const updatedProfile = await updateUserProfile(currentUser.id, formData);
+      
       if (updatedProfile) {
-        setUserProfile(updatedProfile);
+        setProfile(updatedProfile);
         toast({
           title: "Profil mis à jour",
-          description: "Vos informations ont été enregistrées avec succès.",
+          description: "Vos informations ont été sauvegardées avec succès.",
         });
       } else {
-        throw new Error("Erreur lors de la mise à jour du profil");
+        throw new Error("Erreur lors de la mise à jour");
       }
-    } catch (err) {
-      setError("Une erreur est survenue lors de la mise à jour de votre profil. Veuillez réessayer.");
+    } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour de votre profil.",
-        variant: "destructive",
+        description: "Impossible de mettre à jour le profil.",
+        variant: "destructive"
       });
     } finally {
-      setSaving(false);
+      setUpdating(false);
     }
   };
 
-  // Déconnexion
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la déconnexion. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    } else {
-      navigate("/");
-    }
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar />
-        <div className="container mx-auto px-4 py-12 flex-grow flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <User className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+            <p className="text-gray-500">Chargement du profil...</p>
+          </div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
+      
+      <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mon Profil</h1>
+          <p className="text-gray-600">Gérez vos informations personnelles</p>
+        </div>
 
-      <div className="container mx-auto px-4 py-12 flex-grow">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Mon Profil</h1>
-
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {userProfile && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="first_name" className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-technicien-600" />
-                        Prénom
-                      </Label>
-                      <Input
-                        id="first_name"
-                        name="first_name"
-                        value={userProfile.first_name || ""}
-                        onChange={handleInputChange}
-                        placeholder="Votre prénom"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="last_name" className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-technicien-600" />
-                        Nom
-                      </Label>
-                      <Input
-                        id="last_name"
-                        name="last_name"
-                        value={userProfile.last_name || ""}
-                        onChange={handleInputChange}
-                        placeholder="Votre nom"
-                      />
-                    </div>
-                  </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Informations de base */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Informations personnelles
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-technicien-600" />
-                      Téléphone
-                    </Label>
+                    <Label htmlFor="first_name">Prénom</Label>
+                    <Input
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => handleInputChange("first_name", e.target.value)}
+                      placeholder="Votre prénom"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name">Nom</Label>
+                    <Input
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => handleInputChange("last_name", e.target.value)}
+                      placeholder="Votre nom"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="phone"
-                      name="phone"
-                      value={userProfile.phone || ""}
-                      onChange={handleInputChange}
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="Votre numéro de téléphone"
+                      className="pl-10"
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="flex items-center gap-2">
-                      <Home className="h-4 w-4 text-technicien-600" />
-                      Adresse
-                    </Label>
-                    <Textarea
-                      id="address"
-                      name="address"
-                      value={userProfile.address || ""}
-                      onChange={handleInputChange}
-                      placeholder="Votre adresse complète"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="city" className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-technicien-600" />
-                      Ville
-                    </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="city"
-                      name="city"
-                      value={userProfile.city || ""}
-                      onChange={handleInputChange}
-                      placeholder="Votre ville"
+                      id="email"
+                      type="email"
+                      value={currentUser?.email || ""}
+                      disabled
+                      className="pl-10 bg-gray-50"
                     />
                   </div>
+                  <p className="text-sm text-gray-500">
+                    L'email ne peut pas être modifié
+                  </p>
+                </div>
 
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-4 pt-4">
-                    <Button
-                      type="submit"
-                      disabled={saving}
-                      className="bg-technicien-600 hover:bg-technicien-700"
-                    >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      {saving ? "Enregistrement..." : "Enregistrer les modifications"}
-                    </Button>
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={handleSave}
+                    disabled={updating}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {updating ? "Enregistrement..." : "Enregistrer les modifications"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleLogout}
-                      className="border-destructive text-destructive hover:bg-destructive/10"
-                    >
-                      Se déconnecter
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Photo de profil */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Photo de profil</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Avatar className="w-24 h-24 mx-auto mb-4">
+                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-2xl font-bold">
+                    {profile?.first_name?.[0]?.toUpperCase() || currentUser?.email?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <p className="text-sm text-gray-500 mb-4">
+                  Photo de profil non disponible pour le moment
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  Se déconnecter
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 

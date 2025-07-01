@@ -33,6 +33,18 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   }
 };
 
+export const getCurrentUser = async (): Promise<UserProfile | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    
+    return await getUserProfile(user.id);
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error);  
+    return null;
+  }
+};
+
 export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase

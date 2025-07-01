@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Technician {
@@ -94,6 +95,11 @@ export const technicianService = {
       console.error('Error in createTechnician:', error);
       return null;
     }
+  },
+
+  addTechnician: async (technician: NewTechnician): Promise<Technician | null> => {
+    // Alias pour createTechnician pour compatibilité
+    return technicianService.createTechnician(technician);
   },
 
   updateTechnician: async (id: string, updates: Partial<Technician>): Promise<Technician | null> => {

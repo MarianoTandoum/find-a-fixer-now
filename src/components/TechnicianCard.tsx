@@ -1,68 +1,57 @@
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MapPin, User, MessageCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Star } from "lucide-react";
 import { Technician } from "@/services/technicianService";
-import TechnicianBadge from "./TechnicianBadge";
 
 interface TechnicianCardProps {
   technician: Technician;
-  showDetails?: boolean;
 }
 
-const TechnicianCard = ({ technician, showDetails = false }: TechnicianCardProps) => {
+const TechnicianCard = ({ technician }: TechnicianCardProps) => {
   return (
-    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start gap-2">
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-4">
+        <div className="flex items-start space-x-4">
+          <Avatar className="w-16 h-16">
+            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-bold">
+              {technician.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
           <div className="flex-1">
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-gray-900">
               {technician.name}
-              <TechnicianBadge isValidated={technician.is_validated} />
             </CardTitle>
+            
+            <Badge variant="secondary" className="mt-1">
+              {technician.profession}
+            </Badge>
+            
+            <div className="flex items-center mt-2 text-gray-600">
+              <MapPin className="w-4 h-4 mr-1" />
+              <span className="text-sm">{technician.city}</span>
+            </div>
+            
+            <div className="flex items-center mt-1">
+              <Star className="w-4 h-4 text-yellow-500 mr-1" />
+              <span className="text-sm font-medium">{technician.rating.toFixed(1)}</span>
+              <span className="text-xs text-gray-500 ml-1">
+                ({technician.total_missions} missions)
+              </span>
+            </div>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="flex-grow space-y-4">
-        <div className="text-sm font-medium text-technicien-600 bg-technicien-50 inline-block px-2 py-1 rounded">
-          {technician.profession}
-        </div>
-        
-        <div className="space-y-2">
-          {technician.location && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{technician.location}</span>
-            </div>
-          )}
-          
-          {technician.bio && (
-            <p className="text-sm text-muted-foreground line-clamp-3">
-              {technician.bio}
-            </p>
-          )}
-        </div>
-      </CardContent>
-      
-      <CardFooter className="flex gap-2">
-        <Button asChild variant="outline" className="flex-1">
-          <Link to={`/technician/${technician.id}`}>
-            <User className="mr-2 h-4 w-4" />
-            Voir le profil
-          </Link>
-        </Button>
-        
-        {!showDetails && (
-          <Button asChild className="flex-1 bg-technicien-600 hover:bg-technicien-700">
-            <Link to={`/contact/${technician.id}`}>
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Contacter
-            </Link>
-          </Button>
+      <CardContent className="pt-0">
+        {technician.bio && (
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {technician.bio}
+          </p>
         )}
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };
