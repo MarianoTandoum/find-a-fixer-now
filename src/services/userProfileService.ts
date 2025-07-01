@@ -1,62 +1,75 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 
 export interface UserProfile {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  is_online: boolean | null;
-  last_seen: string | null;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  role: string;
+  is_online: boolean;
+  last_seen?: string;
   created_at: string;
   updated_at: string;
 }
 
-export const getCurrentUser = async (): Promise<User | null> => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Erreur lors de la récupération de l'utilisateur:", error);
-    return null;
-  }
-  return data.user;
-};
-
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-  if (error) {
-    console.error("Erreur lors de la récupération du profil utilisateur:", error);
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getUserProfile:', error);
     return null;
   }
-
-  return data;
 };
 
-export const updateUserProfile = async (
-  userId: string,
-  profileData: Partial<UserProfile>
-): Promise<UserProfile | null> => {
-  // Supprimer les champs qu'on ne veut pas mettre à jour
-  const { id, created_at, updated_at, ...updateData } = profileData as any;
+export const updateUserProfile = async (userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
 
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .update(updateData)
-    .eq('id', userId)
-    .select()
-    .single();
+    if (error) {
+      console.error('Error updating user profile:', error);
+      return null;
+    }
 
-  if (error) {
-    console.error("Erreur lors de la mise à jour du profil utilisateur:", error);
+    return data;
+  } catch (error) {
+    console.error('Error in updateUserProfile:', error);
     return null;
   }
+};
 
-  return data;
+export const createUserProfile = async (profile: Omit<UserProfile, 'created_at' | 'updated_at'>): Promise<UserProfile | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert([profile])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating user profile:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createUserProfile:', error);
+    return null;
+  }
 };
