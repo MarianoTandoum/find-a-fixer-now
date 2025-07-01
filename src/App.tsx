@@ -16,6 +16,8 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Conversations from "./pages/Conversations";
+import ClientRequest from "./pages/ClientRequest";
+import RequestConfirmation from "./pages/RequestConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/technician/:id" element={<TechnicianProfile />} />
           <Route path="/contact/:id" element={<ContactTechnician />} />
           <Route path="/conversations" element={<Conversations />} />
+          <Route path="/client-request" element={<ClientRequest />} />
+          <Route path="/request-confirmation" element={<RequestConfirmation />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/auth" element={<Auth />} />
