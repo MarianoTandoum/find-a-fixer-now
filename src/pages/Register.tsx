@@ -22,7 +22,7 @@ const registerSchema = z.object({
     .min(9, "Le numéro doit contenir au moins 9 chiffres")
     .max(13, "Le numéro ne doit pas dépasser 13 caractères")
     .regex(/^(?:\+?237|237)?[6-9][0-9]{8}$/, "Format invalide. Exemple: 6XXXXXXXX ou +2376XXXXXXXX"),
-  location: z.string().optional(),
+  city: z.string().optional(),
   bio: z.string().optional(),
 });
 
@@ -39,7 +39,7 @@ const Register = () => {
       name: "",
       profession: "",
       phone: "",
-      location: "",
+      city: "",
       bio: "",
     },
   });
@@ -95,9 +95,10 @@ const Register = () => {
         name: values.name,
         profession: values.profession,
         phone: formattedPhone,
-        location: values.location || "",
+        city: values.city || "",
         bio: values.bio || "",
-        user_id: session.user.id
+        user_id: session.user.id,
+        is_validated: false
       });
       
       toast({
@@ -210,7 +211,7 @@ const Register = () => {
                 
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
